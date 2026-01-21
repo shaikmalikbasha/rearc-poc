@@ -10,8 +10,6 @@ COPY . /app/
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN ls -la /
-
 # Expose the port that App will run on
 EXPOSE 5000
 

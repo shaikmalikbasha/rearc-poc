@@ -7,3 +7,7 @@ bls-app/.env
 
 lambda-api/**__pycache__**
 lambda-api/*.pyc
+lambda-api/*.pyo
+lambda-api/*.pyd
+lambda-api/.venv
+lambda-api/.env
