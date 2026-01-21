@@ -1,0 +1,8 @@
+bls-app/**__pycache__**
+bls-app/*.pyc
+bls-app/*.pyo
+bls-app/*.pyd
+bls-app/.venv
+bls-app/.env
+
+minio
