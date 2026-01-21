@@ -11,3 +11,10 @@ lambda-api/*.pyo
 lambda-api/*.pyd
 lambda-api/.venv
 lambda-api/.env
+
+analysis-app/**__pycache__**
+analysis-app/*.pyc
+analysis-app/*.pyo
+analysis-app/*.pyd
+analysis-app/.venv
+analysis-app/.env
