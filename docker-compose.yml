@@ -7,9 +7,23 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ENDPOINT=minio-service:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
+    depends_on:
+      - minio-service
+
+  # --- New Lambda Service ---
+  lambda-api:
+    build: ./lambda-api
+    container_name: lambda-api
+    ports:
+      - "8080:8080"
+    environment:
+      - MINIO_ENDPOINT=http://minio-service:9000
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_REGION=us-east-1
     depends_on:
       - minio-service
 
@@ -17,8 +31,8 @@ services:
     image: minio/minio
     container_name: minio-service
     ports:
-      - "9005:9000"   # Custom API port
-      - "9006:9001"   # Custom Console port
+      - "9005:9000"
+      - "9006:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin

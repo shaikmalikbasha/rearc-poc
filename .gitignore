@@ -5,4 +5,5 @@ bls-app/*.pyd
 bls-app/.venv
 bls-app/.env
 
-minio
+lambda-api/**__pycache__**
+lambda-api/*.pyc
