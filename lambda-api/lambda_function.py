@@ -95,7 +95,38 @@ def list_s3_objects(s3_client, bucket: str, prefix: str) -> dict:
     return result
 
 
-def sync_bls_pr_to_s3(s3, bucket: str, prefix: str = "bls/pr/"):
+def pull_population_data_to_s3(s3, bucket_name, prefix):
+    """
+    Fetch JSON data from API and upload it to S3 as a JSON file
+    """
+    API_URL = (
+        "https://honolulu-api.datausa.io/tesseract/data.jsonrecords"
+        "?cube=acs_yg_total_population_1"
+        "&drilldowns=Year%2CNation"
+        "&locale=en"
+        "&measures=Population"
+    )
+
+    # Fetch data from API
+    with httpx.Client(timeout=30.0) as client:
+        response = client.get(API_URL)
+        response.raise_for_status()
+        data = response.json()
+
+    # Create S3 object key (e.g., prefix/data_2026-01-21.json)
+    # timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    s3_key = f"{prefix.rstrip('/')}/population_data.json"
+
+    # Upload to S3
+    s3.put_object(
+        Bucket=bucket_name,
+        Key=s3_key,
+        Body=json.dumps(data),
+        ContentType="application/json",
+    )
+
+
+def sync_bls_pr_to_s3(s3, bucket: str, prefix: str):
     """
     Sync BLS PR directory to S3.
 
@@ -164,7 +195,24 @@ def handler(event, context):
     #     "content-type": "application/json",
     # }
 
-    sync_bls_pr_to_s3(s3, bucket_name, prefix=BASE_PATH.lstrip("/"))
+    try:
+        pull_population_data_to_s3(s3, bucket_name, prefix="population")
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": f"Error pulling population data: {str(e)}"}),
+        }
+
+    try:
+        sync_bls_pr_to_s3(s3, bucket_name, prefix=BASE_PATH.lstrip("/"))
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": f"Error syncing BLS PR data: {str(e)}"}),
+        }
+
     return {
         "statusCode": 200,
         "headers": {"Content-Type": "application/json"},
