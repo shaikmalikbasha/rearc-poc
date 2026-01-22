@@ -39,9 +39,9 @@ def create_s3_client():
     """Create and return an S3 (or MinIO) client."""
     return boto3.client(
         "s3",
-        endpoint_url=os.environ.get("MINIO_ENDPOINT"),
-        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        endpoint_url=os.environ.get("MINIO_ENDPOINT", "http://localhost:9005"),
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", "minioadmin"),
+        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", "minioadmin"),
         region_name=os.environ.get("AWS_REGION") or "us-east-1",
     )
 
