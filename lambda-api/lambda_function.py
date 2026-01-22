@@ -52,9 +52,9 @@ def list_bls_files() -> dict:
 
     for link in soup.find_all("a"):
         href = link.get("href")
-        print("ROOT_URL:", ROOT_URL)
-        print("BASE_URL:", BASE_URL)
-        print("Resolved:", urljoin(ROOT_URL, href))
+        # print("ROOT_URL:", ROOT_URL)
+        # print("BASE_URL:", BASE_URL)
+        # print("Resolved:", urljoin(ROOT_URL, href))
 
         if not href or href.endswith("/") or href.startswith("?"):
             continue

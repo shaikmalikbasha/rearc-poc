@@ -63,24 +63,46 @@ services:
     image: minio/mc
     depends_on:
       - minio-service
-    entrypoint: >
-      /bin/sh -c "
-      echo 'Initializing MinIO...';
-      while ! /usr/bin/mc alias set myminio http://minio-service:9000 minioadmin minioadmin; do
-        echo 'Waiting for MinIO API...';
-        sleep 2;
-      done;
+    entrypoint: 
+      - /bin/sh
+      - -c
+      - |
+        echo 'Initializing MinIO...'
+        
+        # 1. Setup Alias
+        # We use a simple loop without complex semicolons
+        until /usr/bin/mc alias set myminio http://minio-service:9000 minioadmin minioadmin; do
+          echo 'Waiting for MinIO API...'
+          sleep 5
+        done
 
-      /usr/bin/mc mb --ignore-existing myminio/my-bucket;
+        # 2. Create Bucket
+        /usr/bin/mc mb --ignore-existing myminio/my-bucket
 
-      echo 'Attempting to register webhook event...';
-      while ! /usr/bin/mc event add myminio/my-bucket arn:minio:sqs::primary:webhook --event put; do
-        echo 'ARN not ready yet, retrying...';
-        sleep 3;
-      done;
+        # 3. Clear existing notifications to avoid overlap errors
+        echo 'Clearing existing bucket notifications...'
+        /usr/bin/mc event remove myminio/my-bucket --force || echo 'No events to remove.'
 
-      echo 'Webhook successfully registered!';
-      "
+        # 4. Register Webhook with a check
+        echo 'Attempting to register webhook event...'
+        
+        while true; do
+          # Check if already registered
+          if /usr/bin/mc event list myminio/my-bucket | grep -q 'primary:webhook'; then
+            echo 'Webhook already registered!'
+            break
+          fi
+
+          # Attempt to add
+          if /usr/bin/mc event add myminio/my-bucket arn:minio:sqs::primary:webhook --event put; then
+            echo 'Webhook successfully registered!'
+            break
+          else
+            echo 'ARN not ready or overlap detected, retrying in 3s...'
+            sleep 3
+          fi
+        done
+        echo 'MinIO Initialization Complete.'
 
 volumes:
   minio-data:
