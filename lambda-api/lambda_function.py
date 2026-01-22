@@ -79,9 +79,9 @@ def list_bls_files_old() -> dict:
     for link in soup.find_all("a"):
         href = link.get("href")
 
-        print("ROOT_URL:", ROOT_URL)
-        print("BASE_URL:", BASE_URL)
-        print("Resolved:", urljoin(ROOT_URL, href))
+        # print("ROOT_URL:", ROOT_URL)
+        # print("BASE_URL:", BASE_URL)
+        # print("Resolved:", urljoin(ROOT_URL, href))
 
         if href and not href.endswith("/") and not href.startswith("?"):
             files[href] = BASE_URL + href
