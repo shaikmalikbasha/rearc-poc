@@ -13,6 +13,18 @@ services:
     depends_on:
       - minio-service
 
+  s3-webhook:
+    build: ./s3-webhook
+    container_name: s3-webhook
+    ports:
+      - "8000:8000"
+    environment:
+      - MINIO_ENDPOINT=minio-service:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+    depends_on:
+      - minio-service
+
   # --- New Lambda Service ---
   lambda-api:
     build: ./lambda-api
@@ -39,9 +51,36 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      # --- Webhook Updates ---
+      MINIO_NOTIFY_WEBHOOK_ENABLE_primary: "on"
+      # Points to your FastAPI app on port 8000 inside the docker network
+      MINIO_NOTIFY_WEBHOOK_ENDPOINT_primary: "http://s3-webhook:8000/minio-webhook"
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio-service
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Initializing MinIO...';
+      while ! /usr/bin/mc alias set myminio http://minio-service:9000 minioadmin minioadmin; do
+        echo 'Waiting for MinIO API...';
+        sleep 2;
+      done;
+
+      /usr/bin/mc mb --ignore-existing myminio/my-bucket;
+
+      echo 'Attempting to register webhook event...';
+      while ! /usr/bin/mc event add myminio/my-bucket arn:minio:sqs::primary:webhook --event put; do
+        echo 'ARN not ready yet, retrying...';
+        sleep 3;
+      done;
+
+      echo 'Webhook successfully registered!';
+      "
 
 volumes:
   minio-data:
