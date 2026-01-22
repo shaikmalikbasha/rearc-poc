@@ -14,6 +14,17 @@ BASE_PATH = "/pub/time.series/pr/"
 BASE_URL = urljoin(ROOT_URL.rstrip("/") + "/", BASE_PATH.lstrip("/"))
 
 
+def create_s3_bucket_if_not_exists(s3_client, bucket_name) -> None:
+    """Create an S3 bucket if it does not already exist."""
+    existing_buckets = s3_client.list_buckets()
+    bucket_names = [bucket["Name"] for bucket in existing_buckets.get("Buckets", [])]
+
+    if bucket_name not in bucket_names:
+        print(f"Creating bucket: {bucket_name}")
+        s3_client.create_bucket(Bucket=bucket_name)
+        print(f"Bucket {bucket_name} created.")
+
+
 def md5_bytes(data: bytes) -> str:
     return hashlib.md5(data).hexdigest()
 
@@ -115,7 +126,7 @@ def pull_population_data_to_s3(s3, bucket_name, prefix):
 
     # Create S3 object key (e.g., prefix/data_2026-01-21.json)
     # timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
-    s3_key = f"{prefix.rstrip('/')}/population_data.json"
+    s3_key = f"{prefix.rstrip('/')}/honolulu_population_data.json"
 
     # Upload to S3
     s3.put_object(
@@ -171,9 +182,8 @@ def handler(event, context):
         region_name=os.environ.get("AWS_REGION") or "us-east-1",
     )
 
-    bucket_name = (
-        event.get("bucket-name") or "data"
-    )  # Ensure this bucket exists in MinIO
+    bucket_name = event.get("bucket-name") or "data"
+    create_s3_bucket_if_not_exists(s3, bucket_name)
 
     # file_list = []
 
